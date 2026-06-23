@@ -75,7 +75,6 @@ loan-portfolio-analytics/
 │       ├── dim_ownership.csv       # 3 home ownership types
 │       └── dim_status.csv          # 6 loan statuses + is_risk flag
 │
-├── SQL_PowerBI_Build_Guide.docx    # Step-by-step Power BI Desktop setup guide
 └── README.md
 ```
 
