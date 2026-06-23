@@ -22,8 +22,6 @@ End-to-end data engineering and business intelligence project on a **3,000-loan 
 - [Key Findings](#key-findings)
 - [Setup & Usage](#setup--usage)
 - [Skills Demonstrated](#skills-demonstrated)
-- [Resume Bullets](#resume-bullets)
-
 ---
 
 ## Project Overview
@@ -562,23 +560,6 @@ CALL sp_repayment_dashboard('B', 36);
 | **Power BI data modelling** | Single flat view import, _Measures table, slicer cross-filtering | ⭐⭐ Moderate–Strong |
 | **DAX measures** | 46 measures: `CALCULATE`, `DIVIDE`, `SWITCH`, `SELECTEDVALUE` | ⭐⭐ Moderate–Strong |
 | **Finance / lending domain** | at-risk flag, DTI bands, recovery rate, net yield proxy, repayment progress | ⭐⭐⭐ Strong |
-
----
-
-## Resume Bullets
-
-### For a Data Analyst role
-- Designed a MySQL star schema (Kimball, 1 fact + 5 dimensions, FK constraints + 8 indexes) for a 3,000-loan consumer lending portfolio worth $55.2M, normalising a 39-column flat CSV into a maintainable relational model.
-- Wrote 20 production-ready SQL queries including window-function portfolio-share calculations, a 7×4 conditional-aggregation cross-tab (grade × DTI at-risk rates), and a pricing-vs-realised-risk spread analysis — all without temporary tables or subqueries.
-- Built 7 reusable SQL views decoupling a Power BI report from the underlying schema, and 3 parameterised stored procedures enabling grade- and term-level dashboard drilldown via a single `CALL`.
-
-### For a BI Developer / Power BI Developer role
-- Delivered a 3-page Power BI Desktop report (Risk Analysis, Borrower Profile, Repayment & Financial) connected to a MySQL star schema via a single flat view import, with 46 DAX measures covering KPIs, conditional calculations, dynamic titles, and cross-page slicer architecture.
-- Designed a DAX measure library using `CALCULATE()` for explicit context modification, `DIVIDE()` for zero-safe division, and `SELECTEDVALUE()` for dynamic visual titles — following Power BI best practices throughout.
-
-### For a Data Engineer role
-- Built an end-to-end data pipeline — Python ETL (pandas + mysql-connector) with transactional loading, FK-safe insert ordering, idempotent reload logic, and KPI sanity checks before commit — loading 3,000 loan records into a 6-table MySQL star schema.
-- Engineered a reporting database designed for both Import and DirectQuery mode in Power BI: indexed FK columns on all five fact-table joins, conformed dimensions with surrogate keys, and a flat denormalised view as the single BI entry point.
 
 ---
 
