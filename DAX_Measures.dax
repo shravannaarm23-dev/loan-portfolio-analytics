@@ -1,0 +1,258 @@
+// ============================================================================
+// Power BI DAX Measures — Loan Portfolio Analytics
+// ============================================================================
+// Paste each measure into Power BI Desktop via:
+//   Modeling tab → New Measure → paste formula → Enter
+//
+// Table assumptions (all from vw_loan_detail loaded as one import table):
+//   Table name in Power BI: "LoanDetail"
+//   Columns match vw_loan_detail exactly (see 03_views.sql)
+// ============================================================================
+
+
+// ── TABLE: _Measures (create an empty calculated table to house all measures)
+// In Power BI: Modeling → New Table → _Measures = {1}  (blank helper table)
+
+
+// ============================================================================
+//  SECTION 1 — CORE KPIs  (used on every dashboard page)
+// ============================================================================
+
+[Total Loans] =
+COUNTROWS( LoanDetail )
+
+[At-Risk Loans] =
+CALCULATE( COUNTROWS( LoanDetail ), LoanDetail[is_risk] = 1 )
+
+[Good Standing Loans] =
+CALCULATE( COUNTROWS( LoanDetail ), LoanDetail[is_risk] = 0 )
+
+[At-Risk Rate %] =
+DIVIDE( [At-Risk Loans], [Total Loans], 0 )
+
+[Total Originated ($)] =
+SUM( LoanDetail[loan_amnt] )
+
+[Avg Loan Amount ($)] =
+AVERAGE( LoanDetail[loan_amnt] )
+
+[Avg Interest Rate %] =
+AVERAGE( LoanDetail[int_rate] )
+
+[Avg DTI] =
+AVERAGE( LoanDetail[dti] )
+
+[Total Payments Received ($)] =
+SUM( LoanDetail[total_pymnt] )
+
+[Total Interest Earned ($)] =
+SUM( LoanDetail[total_rec_int] )
+
+[Total Principal Received ($)] =
+SUM( LoanDetail[total_rec_prncp] )
+
+[Total Outstanding Principal ($)] =
+SUM( LoanDetail[out_prncp] )
+
+[Total Recoveries ($)] =
+SUM( LoanDetail[recoveries] )
+
+[Total Collection Fees ($)] =
+SUM( LoanDetail[collection_recovery_fee] )
+
+[Avg Repayment Progress %] =
+AVERAGE( LoanDetail[repayment_progress_pct] )
+
+
+// ============================================================================
+//  SECTION 2 — RISK ANALYSIS PAGE
+// ============================================================================
+
+// Used in the grade at-risk rate bar chart (Y axis)
+[At-Risk Rate % by Grade] =
+DIVIDE(
+    CALCULATE( COUNTROWS( LoanDetail ), LoanDetail[is_risk] = 1 ),
+    COUNTROWS( LoanDetail ),
+    0
+)
+
+// Used in a conditional-format card: turns red when > 10%
+[At-Risk Rate % Flag] =
+VAR rate = [At-Risk Rate %]
+RETURN
+    IF( rate > 0.10, "High Risk", IF( rate > 0.05, "Moderate", "Low Risk" ) )
+
+// Loan status distribution — used in a donut chart
+[Loan Status Share %] =
+DIVIDE(
+    COUNTROWS( LoanDetail ),
+    CALCULATE( COUNTROWS( LoanDetail ), ALLSELECTED( LoanDetail[loan_status] ) ),
+    0
+)
+
+// Interest rate spread: at-risk vs current loans in same grade
+[Avg Rate – At-Risk] =
+CALCULATE( AVERAGE( LoanDetail[int_rate] ), LoanDetail[is_risk] = 1 )
+
+[Avg Rate – Current] =
+CALCULATE( AVERAGE( LoanDetail[int_rate] ), LoanDetail[is_risk] = 0 )
+
+[Rate Spread (At-Risk vs Current)] =
+[Avg Rate – At-Risk] - [Avg Rate – Current]
+
+// Grade risk ranking card — dynamic label for a selected grade
+// Usage: put on a card visual; select a grade from a slicer
+[Selected Grade At-Risk Rate] =
+VAR sel_grade = SELECTEDVALUE( LoanDetail[grade], "All" )
+RETURN
+    IF(
+        sel_grade = "All",
+        FORMAT( [At-Risk Rate %], "0.0%" ) & "  (all grades)",
+        FORMAT( [At-Risk Rate %], "0.0%" ) & "  (" & sel_grade & " grade)"
+    )
+
+// Tooltip: at-risk count + rate for bar chart hover
+[Risk Tooltip] =
+VAR cnt   = [At-Risk Loans]
+VAR rate  = FORMAT( [At-Risk Rate %], "0.0%" )
+RETURN "At-risk: " & cnt & " loans (" & rate & ")"
+
+
+// ============================================================================
+//  SECTION 3 — BORROWER PROFILE PAGE
+// ============================================================================
+
+[Total Borrowers] =
+COUNTROWS( LoanDetail )
+
+[Avg Annual Income ($)] =
+AVERAGE( LoanDetail[annual_inc_capped] )
+
+[Median Annual Income ($)] =
+MEDIAN( LoanDetail[annual_inc_capped] )
+
+[Avg Loan-to-Income %] =
+AVERAGE( LoanDetail[loan_to_income_pct] )
+
+// Homeowner share = Own + Mortgage
+[Homeowner Share %] =
+DIVIDE(
+    CALCULATE(
+        COUNTROWS( LoanDetail ),
+        LoanDetail[home_ownership] IN { "Own", "Mortgage" }
+    ),
+    COUNTROWS( LoanDetail ),
+    0
+)
+
+// Renter share — complement card
+[Renter Share %] =
+1 - [Homeowner Share %]
+
+// Income band rank (for correct sort order in visuals using numeric axis)
+[Income Band Rank] =
+SWITCH(
+    SELECTEDVALUE( LoanDetail[income_band] ),
+    "Under 30K",  1,
+    "30–50K",     2,
+    "50–75K",     3,
+    "75–100K",    4,
+    "Over 100K",  5,
+    0
+)
+
+// Borrower count with % of total — tooltip helper for bar chart
+[Borrower Count %] =
+DIVIDE(
+    COUNTROWS( LoanDetail ),
+    CALCULATE( COUNTROWS( LoanDetail ), ALL( LoanDetail ) ),
+    0
+)
+
+[Borrower Tooltip] =
+VAR cnt  = COUNTROWS( LoanDetail )
+VAR pct  = FORMAT( [Borrower Count %], "0.0%" )
+RETURN cnt & " borrowers (" & pct & " of portfolio)"
+
+
+// ============================================================================
+//  SECTION 4 — REPAYMENT & FINANCIAL PAGE
+// ============================================================================
+
+// Percent of principal recovered
+[Principal Recovery Rate %] =
+DIVIDE( [Total Principal Received ($)], [Total Originated ($)], 0 )
+
+// Net yield proxy: interest earned / total originated
+[Portfolio Net Yield %] =
+DIVIDE( [Total Interest Earned ($)], [Total Originated ($)], 0 )
+
+// At-risk loan exposure metrics
+[At-Risk Loan Value ($)] =
+CALCULATE( SUM( LoanDetail[loan_amnt] ), LoanDetail[is_risk] = 1 )
+
+[At-Risk Recovery Rate %] =
+DIVIDE(
+    CALCULATE( SUM( LoanDetail[recoveries] ), LoanDetail[is_risk] = 1 ),
+    [At-Risk Loan Value ($)],
+    0
+)
+
+// Quarter-over-quarter payment change (requires Date table or quarter_label column)
+[Payments QoQ Change ($)] =
+VAR cur_qtr =
+    CALCULATE(
+        SUM( LoanDetail[total_pymnt] ),
+        ALLEXCEPT( LoanDetail, LoanDetail[issue_quarter] )
+    )
+VAR prior_qtr =
+    CALCULATE(
+        SUM( LoanDetail[total_pymnt] ),
+        FILTER(
+            ALL( LoanDetail[issue_quarter] ),
+            LoanDetail[issue_quarter]
+                = CALCULATE( MAX( LoanDetail[issue_quarter] ),
+                    FILTER( ALL( LoanDetail ), LoanDetail[issue_quarter] < MAX( LoanDetail[issue_quarter] ) )
+                  )
+        )
+    )
+RETURN cur_qtr - prior_qtr
+
+// Interest earned share by grade (for 100% stacked bar)
+[Interest Share % by Grade] =
+DIVIDE(
+    SUM( LoanDetail[total_rec_int] ),
+    CALCULATE( SUM( LoanDetail[total_rec_int] ), ALL( LoanDetail[grade] ) ),
+    0
+)
+
+// Repayment progress gauge card (0–100 scale)
+[Portfolio Repayment Progress] =
+AVERAGE( LoanDetail[repayment_progress_pct] )
+
+// Formatted KPI cards
+[Total Originated Label] =
+FORMAT( [Total Originated ($)], "$#,##0,,.0M" ) & " originated"
+
+[Interest Earned Label] =
+"$" & FORMAT( [Total Interest Earned ($)] / 1000000, "#,##0.00" ) & "M earned"
+
+[Outstanding Label] =
+FORMAT( [Total Outstanding Principal ($)], "$#,##0,,.0M" ) & " outstanding"
+
+
+// ============================================================================
+//  SECTION 5 — DYNAMIC TITLE MEASURES  (update page titles on slicer change)
+// ============================================================================
+
+[Page Title – Risk] =
+VAR sel = SELECTEDVALUE( LoanDetail[grade], "All Grades" )
+RETURN "Risk Analysis — " & sel
+
+[Page Title – Borrower] =
+VAR sel = SELECTEDVALUE( LoanDetail[home_ownership], "All Borrowers" )
+RETURN "Borrower Profile — " & sel
+
+[Page Title – Repayment] =
+VAR sel = SELECTEDVALUE( LoanDetail[term_label], "All Terms" )
+RETURN "Repayment & Financial — " & sel

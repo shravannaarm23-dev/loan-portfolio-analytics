@@ -1,0 +1,7 @@
+status_key,loan_status,is_risk,risk_label
+1,Charged Off,1,At Risk
+2,Current,0,Good Standing
+3,Default,1,At Risk
+4,In Grace Period,1,At Risk
+5,Late (16-30 days),1,At Risk
+6,Late (31-120 days),1,At Risk
