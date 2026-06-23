@@ -1,12 +1,5 @@
 # 🏦 Loan Portfolio Analytics — SQL & Power BI
 
-![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat&logo=mysql&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat&logo=python&logoColor=white)
-![Power BI](https://img.shields.io/badge/Power%20BI-Dashboard-F2C811?style=flat&logo=powerbi&logoColor=black)
-![pandas](https://img.shields.io/badge/pandas-ETL-150458?style=flat&logo=pandas&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Complete-1E8449?style=flat)
-![Loans](https://img.shields.io/badge/Portfolio-3%2C000%20loans-1F3864?style=flat)
-
 End-to-end data engineering and business intelligence project on a **3,000-loan consumer lending portfolio worth $55.2M** in originations. Covers the full analytical stack: a normalised MySQL star schema, a structured SQL analysis layer with 20 analytical queries, and a three-page interactive Power BI dashboard backed by 46 DAX measures.
 
 ---
@@ -20,8 +13,6 @@ End-to-end data engineering and business intelligence project on a **3,000-loan 
 - [SQL Analysis Layer](#sql-analysis-layer)
 - [Power BI Dashboard](#power-bi-dashboard)
 - [Key Findings](#key-findings)
-- [Setup & Usage](#setup--usage)
-- [Skills Demonstrated](#skills-demonstrated)
 ---
 
 ## Project Overview
@@ -398,6 +389,24 @@ DIVIDE( [Total Interest Earned ($)], [Total Originated ($)], 0 )
 | Principal donut | Received vs outstanding | $21.3M collected · $34.4M still outstanding |
 | Slicer | `term_label` (36 / 60 months) | Compares 36 vs 60-month loan economics |
 
+# 📊 Dashboard Preview
+
+## 🔴 Risk Analysis
+
+<img width="1193" height="673" alt="Screenshot 2026-06-23 205729" src="https://github.com/user-attachments/assets/6e8573cf-71be-40ba-9e9e-0d3dbe9b841a" />
+
+---
+
+## 🟡 Borrower Profile
+
+<img width="1187" height="658" alt="Screenshot 2026-06-23 205747" src="https://github.com/user-attachments/assets/9bc33900-f11c-4f6f-a619-f43810cbe095" />
+
+---
+
+## 🟢 Repayment & Financial
+
+<img width="1188" height="673" alt="Screenshot 2026-06-23 205757" src="https://github.com/user-attachments/assets/bbfc25c8-42b0-44f8-b493-a260fbc90f62" />
+
 ---
 
 ## Key Findings
@@ -458,107 +467,6 @@ Eight origination cohorts show payments ranging **$2.76M–$3.33M per quarter** 
 | 2026 Q2 | $3,048,476 |
 
 A sharp quarterly drop would be the first early-warning signal worth automating an alert around.
-
----
-
-## Setup & Usage
-
-### Prerequisites
-
-- MySQL 8.0+ (or MariaDB 10.5+)
-- Python 3.9+ with `pandas` and `mysql-connector-python`
-- Power BI Desktop (free) — [download here](https://www.microsoft.com/en-us/download/details.aspx?id=58494)
-- MySQL ODBC Driver 8.x — [download here](https://dev.mysql.com/downloads/connector/odbc/)
-
-### 1 — Create the database and schema
-
-```bash
-# In MySQL Workbench or CLI
-mysql -u root -p < sql/01_schema.sql
-mysql -u root -p loan_portfolio < sql/03_views.sql
-mysql -u root -p loan_portfolio < sql/05_stored_procedures.sql
-```
-
-### 2 — Load data
-
-```bash
-pip install pandas mysql-connector-python
-
-python sql/02_etl_load.py \
-  --host localhost \
-  --user root \
-  --password <your_password>
-```
-
-**Expected output:**
-```
-Connected to MySQL on localhost:3306
-
-  ✓  dim_date                24 rows loaded
-  ✓  dim_grade               35 rows loaded
-  ✓  dim_purpose              7 rows loaded
-  ✓  dim_ownership            3 rows loaded
-  ✓  dim_status               6 rows loaded
-  ✓  fact_loans            3000 rows loaded
-
-KPI sanity check:
-  Total loans      :   3,000
-  At-risk loans    :     218  (7.3%)
-  Total originated : $55,211,100
-  Interest earned  :  $3,754,110.42
-
-ETL complete — all checks passed.
-```
-
-### 3 — Run the analysis queries
-
-```bash
-mysql -u root -p loan_portfolio < sql/04_analysis_queries.sql
-```
-
-Or open `04_analysis_queries.sql` in MySQL Workbench and run individual queries.
-
-### 4 — Test stored procedures
-
-```sql
--- Full portfolio risk breakdown
-CALL sp_risk_dashboard(NULL);
-
--- E-grade drilldown
-CALL sp_risk_dashboard('E');
-
--- Repayment: B-grade, 36-month loans only
-CALL sp_repayment_dashboard('B', 36);
-```
-
-### 5 — Connect Power BI Desktop
-
-1. Open Power BI Desktop → **Get Data** → **MySQL database**
-2. Server: `localhost`, Database: `loan_portfolio`
-3. In the Navigator, select **`vw_loan_detail`** → **Load**
-4. Rename the table to `LoanDetail` in the Fields pane
-5. Create a new table: **Modeling** → **New Table** → `_Measures = {1}` (delete the auto-column)
-6. Paste each measure from `powerbi/DAX_Measures.dax` into **Modeling** → **New Measure**
-7. Follow `SQL_PowerBI_Build_Guide.docx` to build each dashboard page step by step
-
-> **No MySQL?** Connect Power BI directly to the CSV files in `powerbi/data/` using **Get Data → Text/CSV**. Load all six files, then build relationships manually in the data model view.
-
----
-
-## Skills Demonstrated
-
-| Skill | Evidence | Level |
-|---|---|---|
-| **MySQL DDL** | Star schema with FK constraints, typed columns, 8 indexes on fact table | ⭐⭐⭐ Strong |
-| **ETL pipeline** | Python ETL with transactional load, FK-safe ordering, KPI sanity check | ⭐⭐⭐ Strong |
-| **SQL window functions** | `SUM() OVER()` for portfolio share; analytical ranking patterns | ⭐⭐⭐ Strong |
-| **Conditional aggregation** | 7×4 cross-tab pivot in 11 lines — no temp tables | ⭐⭐⭐ Strong |
-| **SQL views & abstraction** | 7 views separating business logic from schema | ⭐⭐⭐ Strong |
-| **Stored procedures** | 3 parameterised procs with optional filters + multi-result-set output | ⭐⭐⭐ Strong |
-| **Kimball star schema** | 5 conformed dims, surrogate keys, degenerate dimensions | ⭐⭐⭐ Strong |
-| **Power BI data modelling** | Single flat view import, _Measures table, slicer cross-filtering | ⭐⭐ Moderate–Strong |
-| **DAX measures** | 46 measures: `CALCULATE`, `DIVIDE`, `SWITCH`, `SELECTEDVALUE` | ⭐⭐ Moderate–Strong |
-| **Finance / lending domain** | at-risk flag, DTI bands, recovery rate, net yield proxy, repayment progress | ⭐⭐⭐ Strong |
 
 ---
 
